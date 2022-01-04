@@ -1,18 +1,15 @@
 from datetime import datetime
+from pathlib import Path
 
 import bokeh
 import pandas as pd
-from bokeh.io import show
+from bokeh.io import curdoc
+from bokeh.layouts import Spacer, column, row
 from bokeh.models import (ColumnDataSource, DataTable, DateFormatter,
                           HoverTool, Label, NumeralTickFormatter, Panel,
                           TableColumn, Tabs)
 from bokeh.plotting import figure, output_file, save
-from lightning import LightningRpc
-from pyln.client import Millisatoshi, Plugin
-from bokeh.layouts import gridplot
-from bokeh.io import curdoc
-from bokeh.layouts import row, column, widgetbox, Spacer
-from pathlib import Path
+from pyln.client import LightningRpc
 
 ### VARIABLES might needs to define!
 lightning_rpc_path = Path.home() /'.lightning/bitcoin/lightning-rpc' # should be in .lightning folder, e.g. "/home/node/.lightning/bitcoin/lightning-rpc"
@@ -29,7 +26,7 @@ curr_m ,curr_y = datetime.now().month,datetime.now().year # till today.
 
 
 # get all needed data
-rpc = LightningRpc(lightning_rpc_path)
+rpc = LightningRpc(str(lightning_rpc_path))
 nodes =  rpc.listnodes()      
 peers = rpc.listpeers()
 chans = rpc.listchannels()
@@ -67,9 +64,10 @@ for chan in set(df_frwds['in_channel']):
 
 ## caclulate in/out liquidiy #
 ##############################
-df = df_prs
-df.pop('channels')
-df = pd.concat([df,pd.DataFrame([i['channels'][0] for i in peers['peers']])],axis=1)
+
+df = df_prs[df_prs['channels'].apply(lambda x:len(x))>0].copy() # get only peers with channels
+df_chans = df.pop('channels')
+df = pd.concat([df,pd.DataFrame([i[0] for i in df_chans.values])],axis=1)
 df_t = df.query('state=="CHANNELD_NORMAL"').query("our_reserve_msat<to_us_msat")
 to_us = (df_t['to_us_msat'] - df['our_reserve_msat']).sum()
 
