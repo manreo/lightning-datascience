@@ -5,7 +5,7 @@ import bokeh
 import pandas as pd
 from bokeh.io import curdoc
 from bokeh.layouts import Spacer, column, row
-from bokeh.models import (ColumnDataSource, DataTable, DateFormatter,
+from bokeh.models import (ColumnDataSource, DataTable, DateFormatter, Div,
                           HoverTool, Label, NumeralTickFormatter, Panel,
                           TableColumn, Tabs)
 from bokeh.plotting import figure, output_file, save
@@ -106,6 +106,12 @@ p.ygrid.grid_line_color = None
 
 fig_liq = p
 
+# some node info
+div1 = Div(text=f'<b>{id_to_alias[owner_node]}\n</b>',width=600, height=20,
+           style={'font-size': '200%','text-align': 'center'})
+
+div2 = Div(text=f'<a href="https://ln.fiatjaf.com/node/{owner_node}">{owner_node}</a> - ({datetime.now().strftime("%d-%m-%Y")})',width=600, height=20,align='center')
+
 
 ### Create forwards figs ###
 ############################
@@ -200,16 +206,23 @@ summary_m = Tabs(tabs=tabs)
 
 ##  Create table with forawrds per month per channel ##
 #######################################################
+##  Create table with forawrds per month per channel ##
+#######################################################
 df = df_frwds
 summary_df = df.query("status=='settled'").groupby(['year','month','day']).sum()
 tabs =[]
-for dt in  pd.period_range(start=f'{year}-{month}',end=f'{curr_y}-{curr_m}', freq='M'):
-    if (dt.year,dt.month) not in summary_df.index:
+for dt in  list(pd.period_range(start=f'{year}-{month}',end=f'{curr_y}-{curr_m}', freq='M')) + ['all']:
+    if dt!='all' and (dt.year,dt.month) not in summary_df.index:
         continue
-    source_in = df.query("status=='settled'").groupby(['year','month','in_channel']).sum().loc[dt.year,dt.month]
-    source_out = df.query("status=='settled'").groupby(['year','month','out_channel']).sum().loc[dt.year,dt.month]
 
+    if dt!='all':
+        source_in = df.query("status=='settled'").groupby(['year','month','in_channel']).sum().loc[dt.year,dt.month]
+        source_out = df.query("status=='settled'").groupby(['year','month','out_channel']).sum().loc[dt.year,dt.month]
+    else:
+        source_in = df.query("status=='settled'").groupby(['in_channel']).sum()
+        source_out = df.query("status=='settled'").groupby(['out_channel']).sum()
     # I get free from in or out????????
+    
     source_in['in_sat'] = round(source_in['in_msatoshi']/1000) + round(source_in['in_msatoshi']/1000)
     source_in['in_sats'] = source_in['in_sat'].apply(lambda x:bitcoin_num(int(x)))
 
@@ -234,9 +247,10 @@ for dt in  pd.period_range(start=f'{year}-{month}',end=f'{curr_y}-{curr_m}', fre
             TableColumn(field="out_sats", title="Out_amount"),
             TableColumn(field="fee", title="Fees (mSats)", formatter=bokeh.models.NumberFormatter(format=","))
             ]
-    
+
     data_table = DataTable(source=source, columns=columns, width=600, height=880)
-    tabs.append(Panel(child=data_table, title=f"{dt.year}-{dt.month}"))
+    
+    tabs.append(Panel(child=data_table, title=f"{dt.year}-{dt.month}" if dt!='all' else 'all-time'))
 
 chart_tabs = Tabs(tabs=tabs)
 
@@ -249,12 +263,12 @@ curdoc().clear()
 node_name = id_to_alias[owner_node]
 output_file("index.html", title=f"Node - {node_name} stats")
 
-spr0 = Spacer(width=400, height=50, sizing_mode='scale_width')
-spr1 = Spacer(width=400, height=50, sizing_mode='scale_width')
+
+spr1 = Spacer(width=400, height=20, sizing_mode='scale_width')
 spr2 = Spacer(width=5, height=50)
 spr3 = Spacer(width=400, height=5)
 
-cl_r = column([spr0,fig_liq,spr1, chart_tabs])
+cl_r = column([div1, div2,fig_liq,spr1, chart_tabs])
 cl_l = column([fig_forwards, spr3,summary_m])
 rl = row([cl_r,spr2,cl_l])
 
