@@ -82,7 +82,6 @@ df_t = df_t.query("weight<(@transfer_amount*0.1) or source==@my_node  or destina
 #remove channels that do not exists twice (from both directions, open a ticket!)
 both_sides = df_t[['short_channel_id']].value_counts().reset_index().rename(columns={0:'count'}).query("count>1")['short_channel_id']
 df_t = df_t.query('short_channel_id in @both_sides')
-print(df_t.query("source==@my_node and destination=='03c5528c628681aa17ab9e117aa3ee6f06c750dfb17df758ecabcd68f1567ad8c1'"))
 
 all_peers_ids = [peer['id'] for peer in peers]
 print(set(list(df_t.query("source==@my_node").destination)) - set(all_peers_ids))
@@ -177,7 +176,7 @@ def calc_mean_sdist(data):
 #@make sure that all out paths from me have the same wight as the new added channel!
 to_send = [[name_to_int[my_node],new_channel_weight,node] for node in range(len(list(g.vertices())))]
  
-g.save('/home/machine/graph_test.gt')
+g.save('??/graph_test.gt')
 
 pickle.dump(to_send,open("??/to_send.pkl",'wb'))
 
