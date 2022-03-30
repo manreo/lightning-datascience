@@ -26,6 +26,7 @@ curr_m ,curr_y = datetime.now().month,datetime.now().year # till today.
 
 
 # get all needed data
+print("Extracting data from c-lightning, it might take a while...")
 rpc = LightningRpc(str(lightning_rpc_path))
 nodes =  rpc.listnodes()      
 peers = rpc.listpeers()
@@ -110,7 +111,7 @@ fig_liq = p
 div1 = Div(text=f'<b>{id_to_alias[owner_node]}\n</b>',width=600, height=20,
            style={'font-size': '200%','text-align': 'center'})
 
-div2 = Div(text=f'<a href="https://ln.fiatjaf.com/node/{owner_node}">{owner_node}</a> - ({datetime.now().strftime("%d-%m-%Y")})',width=600, height=20,align='center')
+div2 = Div(text=f'<a href="https://ln.fiatjaf.com/node/{owner_node}">{owner_node}</a> - ({datetime.now().strftime("%d-%m-%Y")}) <br> <a href="https://github.com/manreo/lightning-datascience/tree/main/node_info">GitHub</a>',width=600, height=40,align='center')
 
 
 ### Create forwards figs ###
@@ -126,8 +127,8 @@ df['year'] = df['date'].dt.year
 
 # get onlu settled forwards
 df.query("status=='settled'").groupby(['year','month','day']).sum() 
-df['in_channel_alias'] =  df['in_channel'].apply(lambda x: chan_to_alias[x] if x in chan_to_alias else 'un')
-df['out_channel_alias'] =  df['out_channel'].apply(lambda x: chan_to_alias[x] if x in chan_to_alias else 'un')
+df['in_channel_alias'] =  df['in_channel'].apply(lambda x: chan_to_alias[x] if x in chan_to_alias else x)
+df['out_channel_alias'] =  df['out_channel'].apply(lambda x: chan_to_alias[x] if x in chan_to_alias else x)
 
 #group by day
 summary_df = df.query("status=='settled'").groupby(['year','month','day']).sum()
