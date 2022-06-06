@@ -91,8 +91,8 @@ p = figure(plot_width=600, plot_height=100,toolbar_location=None)
 p.add_layout(Label(x=50, y=85, text='Available',text_align='center'))
 
 
-p.add_layout(Label(x=25, y=70, text='Out',text_align='center'))
-p.add_layout(Label(x=75, y=70, text='In',text_align='center'))
+p.add_layout(Label(x=25, y=70, text='In-Bound Liquidity',text_align='center'))
+p.add_layout(Label(x=75, y=70, text='Out-Bound Liquidity',text_align='center'))
 
 p.add_layout(Label(x=25, y=50, text=out_liqudity,text_align='center'))
 p.add_layout(Label(x=75, y=50, text=in_liqudity,text_align='center'))
@@ -113,7 +113,9 @@ div1 = Div(text=f'<b>{id_to_alias[owner_node]}\n</b>',width=600, height=20,
 
 div2 = Div(text=f'<a href="https://ln.fiatjaf.com/node/{owner_node}">{owner_node}</a> - ({datetime.now().strftime("%d-%m-%Y")}) <br> <a href="https://github.com/manreo/lightning-datascience/tree/main/node_info">GitHub</a>',width=600, height=40,align='center')
 
-
+amount_trasfered = bitcoin_num(int(df_frwds.query("status=='settled'").sum()[['out_msatoshi','in_msatoshi']].values.mean()/1000))
+div3 = Div(text=f'Total Amount Forwarded: ₿{amount_trasfered}',width=600, height=20,
+           style={'font-size': '120%','text-align': 'center'})
 ### Create forwards figs ###
 ############################
 
@@ -158,15 +160,15 @@ for dt in  pd.period_range(start=f'{year}-{month}',end=f'{curr_y}-{curr_m}', fre
         p.x_range.end = 31.7
         p.xaxis.axis_label = f'{dt.month} - {dt.year}'
         if top == 'counts':
-            p.add_tools(HoverTool(tooltips=[("total", "@in_sats"), ("fees", "@fee")]))
+            p.add_tools(HoverTool(tooltips=[("# Forwards", "@counts"), ("total", "@in_sats"), ("fees", "@fee")]))
             p.yaxis.axis_label = '# Forwards'
             tabs = tabs_forwards
         elif top == 'fee':
-            p.add_tools(HoverTool(tooltips=[("# Forwards", "@counts"), ("total", "@in_sats")]))
+            p.add_tools(HoverTool(tooltips=[("fees", "@fee"), ("# Forwards", "@counts"), ("total", "@in_sats")]))
             p.yaxis.axis_label = 'Total fees (sats)'
             tabs = tabs_fee
         elif top =='in_sat':
-            p.add_tools(HoverTool(tooltips=[("# Forwards", "@counts"), ("fees", "@fee")]))
+            p.add_tools(HoverTool(tooltips=[("total", "@in_sats"), ("# Forwards", "@counts"), ("fees", "@fee")]))
             p.yaxis.axis_label = 'Total amount forwarded (sats)'
             p.yaxis.formatter=NumeralTickFormatter(format=",")
             tabs = tabs_amount
@@ -239,7 +241,7 @@ for dt in  list(pd.period_range(start=f'{year}-{month}',end=f'{curr_y}-{curr_m}'
 
     source_both = source_both.reset_index().sort_values('total_counts',ascending=False)
 
-    source_both['chan_name'] = source_both['index'].apply(lambda x: chan_to_alias[x] if x in chan_to_alias else 'Un')
+    source_both['chan_name'] = source_both['index'].apply(lambda x: chan_to_alias[x] if x in chan_to_alias else x)
     source = ColumnDataSource(source_both.fillna(0))
     columns = [
         TableColumn(field="chan_name", title="channel"),
@@ -265,14 +267,12 @@ node_name = id_to_alias[owner_node]
 output_file("index.html", title=f"Node - {node_name} stats")
 
 
-spr1 = Spacer(width=400, height=20, sizing_mode='scale_width')
+spr1 = Spacer(width=400, height=10, sizing_mode='scale_width')
 spr2 = Spacer(width=5, height=50)
 spr3 = Spacer(width=400, height=5)
 
-cl_r = column([div1, div2,fig_liq,spr1, chart_tabs])
+cl_r = column([div1, div2, fig_liq, div3, spr1, chart_tabs])
 cl_l = column([fig_forwards, spr3,summary_m])
 rl = row([cl_r,spr2,cl_l])
 
 save(rl)
-
-
