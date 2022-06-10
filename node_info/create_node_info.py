@@ -55,8 +55,8 @@ def bitcoin_num(x):
 ## create efficent dicts
 chan_to_node = {}
 chan_to_alias = {}
-for chan in set(df_frwds['in_channel']):
-    nodes = list(chan_df.query("short_channel_id==@chan")['source'])
+for chan in list(set(df_frwds['in_channel'])) + list(set(df_frwds['out_channel'])):
+    nodes = list(chan_df.query("short_channel_id==@chan")['source']) + list(chan_df.query("short_channel_id==@chan")['destination'])
     for node in nodes:
         if node != owner_node:
             chan_to_node[chan] = node
