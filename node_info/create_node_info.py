@@ -111,7 +111,7 @@ fig_liq = p
 div1 = Div(text=f'<b>{id_to_alias[owner_node]}\n</b>',width=600, height=20,
            style={'font-size': '200%','text-align': 'center'})
 
-div2 = Div(text=f'<a href="https://ln.fiatjaf.com/node/{owner_node}">{owner_node}</a> - ({datetime.now().strftime("%d-%m-%Y")}) <br> <a href="https://github.com/manreo/lightning-datascience/tree/main/node_info">GitHub</a>',width=600, height=40,align='center')
+div2 = Div(text=f'<a href="https://amboss.space/node/{owner_node}">{owner_node}</a> - ({datetime.now().strftime("%d-%m-%Y")}) <br> <a href="https://github.com/manreo/lightning-datascience/tree/main/node_info">GitHub</a>',width=600, height=40,align='center')
 
 amount_trasfered = bitcoin_num(int(df_frwds.query("status=='settled'").sum()[['out_msatoshi','in_msatoshi']].values.mean()/1000))
 div3 = Div(text=f'Total Amount Forwarded: ₿{amount_trasfered}',width=600, height=20,
