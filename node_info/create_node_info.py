@@ -32,8 +32,8 @@ nodes =  rpc.listnodes()
 peers = rpc.listpeers()
 chans = rpc.listchannels()
 owner_node = rpc.getinfo()['id']
-forwards = rpc.listforwards()['forwards']
-df_frwds = pd.DataFrame(rpc.listforwards()['forwards'])
+forwards = rpc.listforwards("settled")['forwards']
+df_frwds = pd.DataFrame(forwards)
 
 df_prs = pd.DataFrame(peers['peers'])
 
@@ -168,16 +168,16 @@ for dt in  pd.period_range(start=f'{year}-{month}',end=f'{curr_y}-{curr_m}', fre
             p.yaxis.axis_label = 'Total fees (sats)'
             tabs = tabs_fee
         elif top =='in_sat':
-            p.add_tools(HoverTool(tooltips=[("total", "@in_sats"), ("# Forwards", "@counts"), ("fees", "@fee")]))
+            p.add_tools(HoverTool(tooltips=[("total", "@in_sats"), ("fees", "@fee"), ("# Forwards", "@counts")]))
             p.yaxis.axis_label = 'Total amount forwarded (sats)'
             p.yaxis.formatter=NumeralTickFormatter(format=",")
             tabs = tabs_amount
 
         tabs.append(Panel(child=p, title=f"{dt.year}-{dt.month}"))
         
-forwards_count = Panel(child=Tabs(tabs=tabs_forwards), title=f"Forwards counts")
-forwards_fees  = Panel(child=Tabs(tabs=tabs_fee), title=f"Forwards fees")
-forwards_amount = Panel(child=Tabs(tabs=tabs_amount), title=f"Forwards amount")
+forwards_count = Panel(child=Tabs(tabs=tabs_forwards, active=len(tabs_forwards)-1), title=f"Forwards counts")
+forwards_fees  = Panel(child=Tabs(tabs=tabs_fee, active=len(tabs_fee)-1), title=f"Forwards fees")
+forwards_amount = Panel(child=Tabs(tabs=tabs_amount, active=len(tabs_amount)-1), title=f"Forwards amount")
 
 all_both = Tabs(tabs=[forwards_count,forwards_fees,forwards_amount])
 fig_forwards = all_both
@@ -192,17 +192,22 @@ summary_df_m['in_sats'] = summary_df_m['in_sat'].apply(lambda x:bitcoin_num(int(
 summary_df_m['fee'] = summary_df_m['fee']/1000
 
 tabs = []
-for y,label  in [[summary_df_m.counts,"Forwards counts"], [summary_df_m.fee,"Forwards fees"],[summary_df_m.in_sat,"Forwards amount"]]:
+#for y,label  in [[summary_df_m.counts,"Forwards counts"], [summary_df_m.fee,"Forwards fees"],[summary_df_m.in_sat,"Forwards amount"]]:
+for y,label  in [["counts","Forwards counts"], ["fee","Forwards fees"],["in_sat","Forwards amount"]]:
     x = [datetime(i[0],i[1],1) for i in summary_df_m.index]
+    summary_df_m['date'] = x
     p = figure(width=900, height=300,x_axis_type='datetime')
-    p.line(x, y, line_width=2)
+    p.line(x='date', y=y, line_width=2, source = summary_df_m)
     if label == "Forwards counts":
         p.yaxis.axis_label = '# Forwards'
+        p.add_tools(HoverTool(tooltips=[("# Forwards", "@counts"), ("total", "@in_sats"), ("fees", "@fee")]))
     elif label == "Forwards fees":
         p.yaxis.axis_label = 'Total fees (msats)'
+        p.add_tools(HoverTool(tooltips=[("fees", "@fee"), ("# Forwards", "@counts"), ("total", "@in_sats")]))
     elif label =="Forwards amount":
         p.yaxis.axis_label = 'Total amount forwarded (sats)'
         p.yaxis.formatter=NumeralTickFormatter(format=",")
+        p.add_tools(HoverTool(tooltips=[("total", "@in_sats"), ("fees", "@fee"), ("# Forwards", "@counts")]))
     tabs.append(Panel(child=p, title=label))
 summary_m = Tabs(tabs=tabs)
 
@@ -255,7 +260,7 @@ for dt in  list(pd.period_range(start=f'{year}-{month}',end=f'{curr_y}-{curr_m}'
     
     tabs.append(Panel(child=data_table, title=f"{dt.year}-{dt.month}" if dt!='all' else 'all-time'))
 
-chart_tabs = Tabs(tabs=tabs)
+chart_tabs = Tabs(tabs=tabs, active=len(tabs)-2)
 
 
 
